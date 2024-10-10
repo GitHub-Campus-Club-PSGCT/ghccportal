@@ -33,13 +33,15 @@ export default function EvaluateWorkNoticesTable({
   workNotices,
   approveWorkNotice,
 }: EvaluateWorkNoticesTableProps) {
-  const [points, setPoints] = useState<{ [key: string]: number }>({});
+  const [points, setPoints] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
 
   const handleApprove = async (noticeId: string) => {
     setLoading({ ...loading, [noticeId]: true });
-    const result = await approveWorkNotice(noticeId, points[noticeId] || 0);
+    const pointsValue = parseInt(points[noticeId] || "0", 10);
+    const result = await approveWorkNotice(noticeId, pointsValue);
     setLoading({ ...loading, [noticeId]: false });
+
     if (result.success) {
       // You might want to update the UI here, e.g., remove the approved notice from the list
       alert("Work notice approved successfully!");
@@ -69,22 +71,22 @@ export default function EvaluateWorkNoticesTable({
             </TableCell>
             <TableCell>
               <Input
+                placeholder="Enter points"
                 type="number"
                 value={points[notice.id] || ""}
                 onChange={(e) =>
                   setPoints({
                     ...points,
-                    [notice.id]: parseInt(e.target.value) || 0,
+                    [notice.id]: e.target.value,
                   })
                 }
-                placeholder="Enter points"
               />
             </TableCell>
             <TableCell>
               <Button
                 color="success"
-                onClick={() => handleApprove(notice.id)}
                 disabled={notice.status === "approved" || loading[notice.id]}
+                onClick={() => handleApprove(notice.id)}
               >
                 {loading[notice.id] ? "Approving..." : "Approve"}
               </Button>

@@ -177,6 +177,7 @@ export class DBFunctions {
     return result.rowsAffected === 1;
   }
 
+  // Work Notices
   async createWorkNotice(
     userId: string,
     title: string,
@@ -209,6 +210,7 @@ export class DBFunctions {
         JOIN profiles p ON wn.user_id = p.user_id
         ORDER BY wn.submitted_at DESC
       `,
+      args: [],
     });
 
     return result.rows.map((row) => this.rowToWorkNotice(row));
@@ -229,7 +231,7 @@ export class DBFunctions {
     approvedBy: string
   ): Promise<boolean> {
     // Start a transaction
-    await this.client.execute({ sql: "BEGIN" });
+    await this.client.execute({ sql: "BEGIN", args: [] });
 
     try {
       // Update the work notice
@@ -273,13 +275,14 @@ export class DBFunctions {
       }
 
       // Commit the transaction
-      await this.client.execute({ sql: "COMMIT" });
+      await this.client.execute({ sql: "COMMIT", args: [] });
 
       return true;
     } catch (error) {
       // Rollback the transaction if any error occurs
-      await this.client.execute({ sql: "ROLLBACK" });
-      console.error("Error in approveWorkNotice:", error);
+      await this.client.execute({ sql: "ROLLBACK", args: [] });
+      this.logError("Error in approveWorkNotice:", error);
+
       return false;
     }
   }
@@ -299,7 +302,25 @@ export class DBFunctions {
       args: [userId],
     });
 
-    return result.rows[0]?.total_points || 0;
+    const totalPoints = result.rows[0]?.total_points;
+
+    if (totalPoints === undefined || totalPoints === null) {
+      return 0;
+    }
+
+    // Ensure the result is converted to a number
+    const numericTotalPoints = Number(totalPoints);
+
+    // Check if the conversion resulted in a valid number
+    if (isNaN(numericTotalPoints)) {
+      this.logError("Invalid total_points value in database", {
+        userId,
+        totalPoints,
+      });
+      return 0;
+    }
+
+    return numericTotalPoints;
   }
 
   private rowToWorkNotice(row: any): WorkNotice {
@@ -309,12 +330,19 @@ export class DBFunctions {
       title: row.title,
       description: row.description,
       file_url: row.file_url,
-      points: row.points,
+      points: row.points ? Number(row.points) : null,
       status: row.status,
       submitted_at: row.submitted_at,
       approved_at: row.approved_at,
       approved_by: row.approved_by,
       submitter_name: row.submitter_name,
     };
+  }
+
+  private logError(message: string, error: unknown): void {
+    // Implement your custom error logging here
+    // For example, you could use a logging service or write to a file
+    // For now, we'll just log to console, but you should replace this with a proper logging solution
+    console.error(message, error);
   }
 }
