@@ -40,6 +40,7 @@ export default function EvaluateWorkNoticesTable({
     setLoading({ ...loading, [noticeId]: true });
     const pointsValue = parseInt(points[noticeId] || "0", 10);
     const result = await approveWorkNotice(noticeId, pointsValue);
+
     setLoading({ ...loading, [noticeId]: false });
 
     if (result.success) {

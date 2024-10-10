@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import { useSignIn } from "@clerk/nextjs";
-import { currentUser } from "@clerk/nextjs/dist/types/server";
 import { useRouter } from "next/navigation";
 import { Button, Input, Image } from "@nextui-org/react";
 
 import { Logo } from "@/components/icons";
 import { DBFunctions } from "@/functions/DBFunctions";
+import { userFetch } from "@/functions/userFetch";
 
 export default function SignInForm() {
   const { isLoaded, signIn, setActive } = useSignIn();
@@ -31,13 +31,7 @@ export default function SignInForm() {
 
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
-        const user = await currentUser();
-        const userCheck = await db.getProfile(user?.id as string);
-        if (userCheck) {
-          router.push("/dashboard");
-        } else {
-          router.push("/onboarding");
-        }
+        router.push("/dashboard");
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
       }

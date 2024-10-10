@@ -2,20 +2,20 @@
 import { title } from "@/components/primitives";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-import { createClient } from "@/utils/supabase/client";
+import { userFetch } from "@/functions/userFetch";
+import { useRouter } from "next/navigation";
+import { DBFunctions } from "@/functions/DBFunctions";
 
 export default async function DocsPage() {
-  const supabase = createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("Not authenticated");
+  const user = await userFetch();
+  const router = useRouter();
+  const db = new DBFunctions();
+  const userCheck = await db.getProfile(user?.id as string);
+  if (userCheck) {
+    router.push("/dashboard");
+  } else {
+    router.push("/onboarding");
   }
-
   // const { data: userInfo, error: profileFetchError } = await supabase
   //   .from("profile")
   //   .select("*")

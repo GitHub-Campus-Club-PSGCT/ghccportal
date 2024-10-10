@@ -1,10 +1,16 @@
+"use client";
 import React from "react";
-import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
 import { UserButton } from "@clerk/nextjs";
-import { DBFunctions } from "@/functions/DBFunctions";
 import { Card, CardBody, CardHeader } from "@nextui-org/react";
-import AccountDetails from "@/components/account/accountDetails";
+import { DBFunctions } from "@/functions/DBFunctions";
+import { userFetch } from "@/functions/userFetch";
+
+const AccountDetailsClient = dynamic(
+  () => import("@/components/account/accountDetails"),
+  { ssr: false }
+);
 
 interface Profile {
   avatar_url: string | null;
@@ -15,8 +21,8 @@ interface Profile {
   user_id: string;
 }
 
-export async function AccountPage() {
-  const user = await currentUser();
+export default async function AccountPage() {
+  const user = await userFetch();
 
   if (!user) {
     redirect("/sign-in");
@@ -29,14 +35,20 @@ export async function AccountPage() {
     redirect("/onboarding");
   }
 
-  // Type assertion and transformation
   const profile: Profile = {
-    avatar_url: profileData.avatar_url as string | null,
-    bio: profileData.bio as string | null,
+    avatar_url: profileData.avatar_url as string,
+    bio: profileData.bio as string,
     full_name: profileData.full_name as string,
     id: profileData.id as string,
     role: profileData.role as string,
     user_id: profileData.user_id as string,
+  };
+
+  const userInfo = {
+    id: user.id,
+    email: user.emailAddresses[0]?.emailAddress || "",
+    fullName: user.fullName || "",
+    imageUrl: user.imageUrl || "",
   };
 
   return (
@@ -48,7 +60,7 @@ export async function AccountPage() {
             <UserButton afterSignOutUrl="/" />
           </CardHeader>
           <CardBody>
-            <AccountDetails profile={profile} user={user} />
+            <AccountDetailsClient profile={profile} userInfo={userInfo} />
           </CardBody>
         </Card>
       </div>
